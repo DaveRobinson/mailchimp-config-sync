@@ -85,6 +85,14 @@ export function createMockMergeField(overrides: Partial<lists.MergeField> = {}):
   };
 }
 
+export function createMockTag(overrides: Partial<lists.Tags> = {}): lists.Tags {
+  return {
+    id: 1,
+    name: 'Test Tag',
+    ...overrides,
+  };
+}
+
 export function createMockMailchimpClient() {
   return {
     setConfig: vi.fn(),
@@ -95,6 +103,7 @@ export function createMockMailchimpClient() {
       addListMergeField: vi.fn(),
       updateListMergeField: vi.fn(),
       deleteListMergeField: vi.fn(),
+      tagSearch: vi.fn(),
     },
   };
 }
@@ -121,6 +130,16 @@ export function createMockMergeFieldsResponse(
     merge_fields: fields,
     list_id: 'test-list-id',
     total_items: fields.length,
+    _links: [],
+  };
+}
+
+export function createMockTagSearchResponse(
+  tags: lists.Tags[]
+): { tags: lists.Tags[]; total_items: number; _links: any[] } {
+  return {
+    tags,
+    total_items: tags.length,
     _links: [],
   };
 }

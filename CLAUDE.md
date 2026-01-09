@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A zero-config CLI tool for syncing configuration between Mailchimp audiences. Currently supports copying merge fields with an interactive selection interface. Built with TypeScript, Commander.js for CLI, and Prompts for interactive UX.
+A zero-config CLI tool for syncing configuration between Mailchimp audiences. Currently supports:
+- **Copying merge fields** with an interactive selection interface
+- **Comparing tags** between audiences (read-only comparison, tags cannot be copied via API)
+
+Built with TypeScript, Commander.js for CLI, and Prompts for interactive UX.
 
 ## Development Commands
 
@@ -32,27 +36,36 @@ node dist/index.js merge-fields --help
 
 ### Module Structure
 
-The codebase is split into three main modules:
-
 1. **src/index.ts** - CLI entry point
    - Uses Commander.js for command parsing
-   - Prompts for API key and audience IDs if not provided
-   - Orchestrates the interactive merge field selection flow
+   - `setupCommand()` - Common logic for API key prompting, client creation, and list selection
+   - Supports CLI arguments (--api-key, --source, --target) with fallback to interactive prompts
+   - Orchestrates command flows for merge-fields and compare-tags
    - Handles user input validation and cancellation
 
-2. **src/merge-fields.ts** - Core business logic
+2. **src/merge-fields.ts** - Merge fields operations
    - `listMergeFields()` - Fetches all merge fields with automatic pagination (handles 1000+ fields)
    - `compareMergeFields()` - Compares source and target audiences, returns diff showing what exists vs. available
    - `copyMergeFields()` - Copies selected fields sequentially, continues on partial failures
    - `createMergeField()` - Creates individual merge field, strips read-only properties (merge_id, list_id, _links)
 
-3. **src/mailchimp-client.ts** - API client wrapper
+3. **src/tags.ts** - Tag comparison operations
+   - `listTags()` - Fetches all tags with automatic pagination (handles 1000+ tags)
+   - `compareTags()` - Compares tags by name between source and target audiences
+   - Returns sourceOnly, targetOnly, and common tag lists (all sorted alphabetically)
+
+4. **src/lists.ts** - Audience selection utilities
+   - `getAllLists()` - Fetches all audiences with pagination
+   - `selectSourceAndTargetLists()` - Interactive prompts for selecting source and target audiences
+
+5. **src/mailchimp-client.ts** - API client wrapper
    - `createMailchimpClient()` - Configures Mailchimp SDK with API key and server
    - `extractServerFromApiKey()` - Parses datacenter from API key format (key-datacenter)
 
-4. **src/types.ts** - Type extensions
+6. **src/types.ts** - Type extensions
    - Extends `@mailchimp/mailchimp_marketing` module using TypeScript declaration merging
    - Adds missing method signatures that exist in the SDK but not in @types
+   - Defines TagSearchResults interface for tagSearch API responses
 
 ### Key Architectural Decisions
 
@@ -70,8 +83,13 @@ Tests use vitest with comprehensive mocking - no live API key required.
   - `createMockMailchimpClient()` - Returns client with vi.fn() for all methods
   - `createMockMergeField()` - Generates test merge field data
   - `createMockMergeFieldsResponse()` - Mocks paginated API responses
+  - `createMockTag()` - Generates test tag data
+  - `createMockTagSearchResponse()` - Mocks paginated tag search API responses
 
-- **Test coverage**: 95.55% with 18 tests covering pagination, error handling, comparison logic, and partial failures
+- **Test files:**
+  - `test/merge-fields.test.ts` - 18 tests covering merge field operations
+  - `test/tags.test.ts` - 18 tests covering tag comparison operations
+  - All tests cover pagination, error handling, comparison logic, edge cases
 
 ### Important Implementation Details
 
@@ -87,16 +105,50 @@ Tests use vitest with comprehensive mocking - no live API key required.
 # Build first
 npm run build
 
-# Test with prompts
+# Merge fields - with interactive prompts
 node dist/index.js merge-fields
 
-# Test with API key parameter
-node dist/index.js merge-fields -k YOUR_KEY-us10
+# Merge fields - with CLI arguments
+node dist/index.js merge-fields -k YOUR_KEY-us10 -s SOURCE_ID -t TARGET_ID
+
+# Compare tags - with interactive prompts
+node dist/index.js compare-tags
+
+# Compare tags - with CLI arguments
+node dist/index.js compare-tags -k YOUR_KEY-us10 -s SOURCE_ID -t TARGET_ID
 
 # Install globally for system-wide testing
 npm link
 mailchimp-config-sync merge-fields
+mailchimp-config-sync compare-tags
 ```
+
+## Known Limitations
+
+### Tags Cannot Be Synced
+
+**Why tags can't be copied between audiences:**
+- Mailchimp's API provides no "create tag" endpoint
+- Tags only exist when applied to audience members via POST `/lists/{list_id}/members/{subscriber_hash}/tags`
+- They are member metadata, not standalone audience configuration
+- The UI may show a tag creation interface, but internally it just creates an empty tag reference
+
+**What the compare-tags command does:**
+- Reads tags from both audiences using the `tagSearch` API endpoint
+- Compares tags by name (IDs are audience-specific and cannot be matched)
+- Returns three lists: sourceOnly (missing in target), targetOnly (extra in target), and common
+- Provides visibility/audit capability so users can see what tags exist where
+
+**Workaround for migrating tags:**
+To establish tags in a target audience, you must apply them to members:
+1. Use compare-tags command to see which tags are missing in target
+2. Manually create tags in target audience UI by tagging at least one member with each tag name
+3. Alternatively: Export/import members with their tags from source to target
+
+**Impact on segments:**
+- Tag-based segments CAN be synced if the required tags already exist in the target audience
+- Users can run compare-tags first, manually create missing tags in UI, then sync tag-based segments
+- Campaign activity conditions still can't be synced (campaign IDs differ between audiences)
 
 ## Adding New Features
 
