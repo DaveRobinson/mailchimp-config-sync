@@ -1,0 +1,35 @@
+{
+  "name": "mailchimp-config-sync",
+  "version": "1.0.0",
+  "description": "Utility to copy config ( merge fields) between mailchimp audiences",
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mailchimp-config-sync": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@types/mailchimp__mailchimp_marketing": "^3.0.22",
+    "@types/node": "^25.0.3",
+    "@types/prompts": "^2.4.9",
+    "@vitest/coverage-v8": "^4.0.16",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.16"
+  },
+  "dependencies": {
+    "@mailchimp/mailchimp_marketing": "^3.0.80",
+    "commander": "^14.0.2",
+    "prompts": "^2.4.2"
+  }
+}
