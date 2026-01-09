@@ -217,6 +217,7 @@ All Mailchimp merge field types are supported:
 - Currently only supports merge fields (not other audience settings)
 - Does not copy field values, only field definitions
 - Designed for copying between audiences in the same Mailchimp account
+- Field comparison is based on tag names - use custom tag names for all merge fields
 
 ## Troubleshooting
 
