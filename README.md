@@ -5,29 +5,35 @@ A zero-config CLI tool for syncing configuration between Mailchimp audiences. Cu
 ## Features
 
 - **Zero Configuration**: No config files needed - just your API key
-- **Interactive Selection**: Browse merge fields and choose which to copy
+- **Interactive Audience Selection**: Browse and select audiences from a visual menu with member counts
+- **Interactive Field Selection**: Choose which merge fields to copy with multi-select
 - **Smart Comparison**: Automatically identifies which fields already exist in the target
 - **Pagination Support**: Handles audiences with large numbers of merge fields
 - **Type Safe**: Built with TypeScript for reliability
 - **No Live API Required for Tests**: Comprehensive test suite with mocked API calls
 
-## Installation
+## Quick Start
 
-### Using npm (Local)
+### Run with npx (Recommended)
+
+No installation needed! Run directly from GitHub:
 
 ```bash
-npm install
-npm run build
-npm link
+npx github:DaveRobinson/mailchimp-config-sync merge-fields
 ```
 
-### From Source
+### Local Development
+
+Clone and build from source:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/DaveRobinson/mailchimp-config-sync
 cd mailchimp-config-sync
 npm install
 npm run build
+
+# Run locally
+node dist/index.js merge-fields
 ```
 
 ## Usage
@@ -37,13 +43,13 @@ npm run build
 Run the CLI and follow the interactive prompts:
 
 ```bash
-mailchimp-config-sync merge-fields
+npx github:DaveRobinson/mailchimp-config-sync merge-fields
 ```
 
 You'll be prompted for:
 1. Your Mailchimp API key (hidden input)
-2. Source audience ID
-3. Target audience ID
+2. Source audience (select from list)
+3. Target audience (select from list)
 4. Which merge fields to copy (multi-select)
 
 ### With API Key Parameter
@@ -51,23 +57,36 @@ You'll be prompted for:
 Pass your API key directly to skip the prompt:
 
 ```bash
-mailchimp-config-sync merge-fields --api-key YOUR_API_KEY-us10
+npx github:DaveRobinson/mailchimp-config-sync merge-fields --api-key YOUR_API_KEY-us10
 ```
 
 Or using the short form:
 
 ```bash
-mailchimp-config-sync merge-fields -k YOUR_API_KEY-us10
+npx github:DaveRobinson/mailchimp-config-sync merge-fields -k YOUR_API_KEY-us10
 ```
 
 ### Example Session
 
 ```bash
-$ mailchimp-config-sync merge-fields
+$ npx github:DaveRobinson/mailchimp-config-sync merge-fields
 
 ? Enter your Mailchimp API key: ••••••••••••••••••••••••••
-? Enter source audience ID: abc123
-? Enter target audience ID: def456
+
+Fetching audiences...
+Found 3 audiences
+
+? Select source audience:
+  ❯ My Newsletter (1,234 members) - abc123
+    Product Updates (567 members) - def456
+    Beta Testers (89 members) - ghi789
+
+? Select target audience:
+  ❯ Product Updates (567 members) - def456
+    Beta Testers (89 members) - ghi789
+
+Source: My Newsletter (abc123def)
+Target: Product Updates (def456ghi)
 
 Fetching merge fields...
 
@@ -99,13 +118,7 @@ Copying 2 merge field(s)...
 
 The datacenter (the part after the dash) is automatically extracted from your API key.
 
-**Note**: This tool works with multiple audiences within the same Mailchimp account.
-
-## Getting Audience IDs
-
-1. In Mailchimp, go to **Audience > All contacts**
-2. Click **Settings > Audience name and defaults**
-3. Look for **Audience ID** on the right side
+**Note**: This tool works with multiple audiences within the same Mailchimp account. Audiences are automatically fetched and displayed for selection - no need to manually look up IDs!
 
 ## Development
 
@@ -134,6 +147,7 @@ npm run dev
 ```
 src/
 ├── index.ts              # CLI entry point with Commander
+├── lists.ts              # Audience/list fetching and selection
 ├── mailchimp-client.ts   # Mailchimp API client wrapper
 ├── merge-fields.ts       # Merge field operations
 └── types.ts              # TypeScript type extensions
@@ -141,6 +155,7 @@ src/
 test/
 ├── mocks/
 │   └── mailchimp.ts      # Mock factories for testing
+├── lists.test.ts
 ├── mailchimp-client.test.ts
 └── merge-fields.test.ts
 ```
@@ -164,11 +179,12 @@ npm run test:coverage
 
 ### Test Coverage
 
-Current coverage: **95.55%**
+Current coverage: **97.56%**
 
-- 18 tests across 2 test suites
-- All merge field operations tested
+- 28 tests across 3 test suites
+- All merge field and list operations tested
 - Pagination, error handling, and edge cases covered
+- Interactive selection flow fully tested
 
 ## API
 
